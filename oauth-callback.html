@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>FFLogs sign-in</title>
+    <style>
+      :root { color-scheme: dark; }
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #11151f;
+        color: #e5e7eb;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+      }
+      .card { max-width: 360px; }
+      h1 { font-size: 16px; margin: 0 0 8px; font-weight: 600; }
+      p { font-size: 13px; margin: 4px 0; color: #9ca3af; }
+      code { color: #fca5a5; word-break: break-word; }
+    </style>
+  </head>
+  <body>
+    <div class="card" id="card">
+      <h1>Signing you in…</h1>
+      <p>You can close this window.</p>
+    </div>
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var payload = {
+          type: 'fflogs-oauth-callback',
+          code: params.get('code'),
+          state: params.get('state'),
+          error: params.get('error'),
+          errorDescription: params.get('error_description'),
+        };
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.postMessage(payload, window.location.origin);
+          }
+        } catch (err) {
+          // Cross-origin or detached opener - best effort.
+        }
+        // Close the popup. Some browsers block close() on tabs they did not
+        // open via script; fall back to instructions in that case.
+        try {
+          window.close();
+        } catch (err) {
+          // ignore
+        }
+        setTimeout(function () {
+          if (!window.closed) {
+            var card = document.getElementById('card');
+            if (!card) return;
+            if (payload.error) {
+              card.innerHTML =
+                '<h1>Sign-in failed</h1>' +
+                '<p><code>' + (payload.errorDescription || payload.error) + '</code></p>' +
+                '<p>You can close this tab.</p>';
+            } else {
+              card.innerHTML =
+                '<h1>Sign-in complete</h1>' +
+                '<p>You can close this tab and return to the app.</p>';
+            }
+          }
+        }, 400);
+      })();
+    </script>
+  </body>
+</html>
